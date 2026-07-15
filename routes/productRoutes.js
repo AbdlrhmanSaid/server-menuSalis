@@ -22,7 +22,7 @@ router.post(
   "/",
   protect,
   authorize("admin", "supervisor"),
-  uploadMiddleware("logo"),
+  uploadMiddleware("image"),
   createProduct
 );
 
@@ -30,7 +30,7 @@ router.put(
   "/:id",
   protect,
   authorize("admin", "supervisor"),
-  uploadMiddleware("logo"),
+  uploadMiddleware("image"),
   updateProduct
 );
 
