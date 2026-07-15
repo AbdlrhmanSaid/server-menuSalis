@@ -8,7 +8,7 @@ const fileFilter = (req, file, cb) => {
     "Processing file:",
     file.originalname,
     "MIME type:",
-    file.mimetype
+    file.mimetype,
   );
 
   if (file.mimetype.startsWith("image/")) {
@@ -80,7 +80,7 @@ const uploadMiddleware = (fieldName, maxCount = null) => {
             originalname: f.originalname,
             mimetype: f.mimetype,
             size: f.size,
-          }))
+          })),
         );
       }
 

@@ -1,6 +1,6 @@
 // controllers/companyController.js
 import Company from "../models/Company.js";
-import cloudinary from "../config/cloudinary.js";
+import { uploadImage, deleteImage } from "../helpers/uploadImage.js";
 
 // Socket instance (هنمرره من السيرفر)
 let io;
@@ -53,14 +53,12 @@ export const createCompany = async (req, res) => {
 
     let logo = null;
     if (req.file) {
-      const b64 = Buffer.from(req.file.buffer).toString("base64");
-      const dataURI = `data:${req.file.mimetype};base64,${b64}`;
-      const uploaded = await cloudinary.uploader.upload(dataURI, {
-        folder: "companies",
-      });
+      console.log("📤 Uploading logo to ImageKit...");
+      const uploaded = await uploadImage(req.file.buffer, "companies", req.file.originalname);
+      console.log("✅ ImageKit upload success:", uploaded.url);
       logo = {
-        public_id: uploaded.public_id,
-        url: uploaded.secure_url,
+        public_id: uploaded.fileId,
+        url: uploaded.url,
       };
     }
 
@@ -78,6 +76,7 @@ export const createCompany = async (req, res) => {
       .status(201)
       .json({ message: "تم إنشاء الشركة بنجاح", company: newCompany });
   } catch (error) {
+    console.error("❌ createCompany error:", error.message);
     res.status(400).json({
       message: "فشل في إنشاء الشركة",
       error: error.message,
@@ -101,18 +100,13 @@ export const updateCompany = async (req, res) => {
     company.description = req.body.description || company.description;
 
     if (req.file) {
-      if (company.logo?.public_id) {
-        await cloudinary.uploader.destroy(company.logo.public_id);
-      }
+      // Delete old image if exists
+      await deleteImage(company.logo?.public_id);
 
-      const b64 = Buffer.from(req.file.buffer).toString("base64");
-      const dataURI = `data:${req.file.mimetype};base64,${b64}`;
-      const uploaded = await cloudinary.uploader.upload(dataURI, {
-        folder: "companies",
-      });
+      const uploaded = await uploadImage(req.file.buffer, "companies", req.file.originalname);
       company.logo = {
-        public_id: uploaded.public_id,
-        url: uploaded.secure_url,
+        public_id: uploaded.fileId,
+        url: uploaded.url,
       };
     }
 
@@ -141,9 +135,8 @@ export const deleteCompany = async (req, res) => {
       return res.status(404).json({ message: "الشركة غير موجودة" });
     }
 
-    if (company.logo?.public_id) {
-      await cloudinary.uploader.destroy(company.logo.public_id);
-    }
+    // Delete image from ImageKit
+    await deleteImage(company.logo?.public_id);
 
     await company.deleteOne();
 

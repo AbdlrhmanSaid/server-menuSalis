@@ -1,7 +1,7 @@
 // controllers/productController.js
 import Product from "../models/Product.js";
 import Menu from "../models/Menu.js";
-import cloudinary from "../config/cloudinary.js";
+import { uploadImage, deleteImage } from "../helpers/uploadImage.js";
 import Company from "../models/Company.js";
 import Branch from "../models/Branch.js";
 import History from "../models/History.js";
@@ -27,21 +27,7 @@ const addToHistory = async (action, user, target, type) => {
   }
 };
 
-// Helper function لرفع الصور من buffer
-const uploadToCloudinary = (fileBuffer, folder) => {
-  return new Promise((resolve, reject) => {
-    const stream = cloudinary.uploader.upload_stream(
-      { folder },
-      (error, result) => {
-        if (error) {
-          return reject(new Error("فشل في رفع الصورة إلى Cloudinary"));
-        }
-        resolve(result);
-      }
-    );
-    stream.end(fileBuffer);
-  });
-};
+
 
 /**
  * @desc    Get all products (فلترة بالمنيو لو حبيت)
@@ -126,10 +112,10 @@ export const createProduct = async (req, res) => {
     // 4️⃣ لو فيه صورة ارفعها
     let image = null;
     if (req.file) {
-      const uploaded = await uploadToCloudinary(req.file.buffer, "products");
+      const uploaded = await uploadImage(req.file.buffer, "products", req.file.originalname);
       image = {
-        public_id: uploaded.public_id,
-        url: uploaded.secure_url,
+        public_id: uploaded.fileId,
+        url: uploaded.url,
       };
     }
 
@@ -322,13 +308,12 @@ export const updateProduct = async (req, res) => {
     if (req.file) {
       if (product.image?.public_id) {
         // 🔧 إصلاح: image بدل logo
-        await cloudinary.uploader.destroy(product.image.public_id);
+        await deleteImage(product.image.public_id);
       }
-      const uploaded = await uploadToCloudinary(req.file.buffer, "products");
+      const uploaded = await uploadImage(req.file.buffer, "products", req.file.originalname);
       product.image = {
-        // 🔧 إصلاح: image بدل logo
-        public_id: uploaded.public_id,
-        url: uploaded.secure_url,
+        public_id: uploaded.fileId,
+        url: uploaded.url,
       };
     }
 
@@ -375,7 +360,7 @@ export const deleteProduct = async (req, res) => {
 
     if (product.image?.public_id) {
       // 🔧 إصلاح: image بدل logo
-      await cloudinary.uploader.destroy(product.image.public_id);
+      await deleteImage(product.image.public_id);
     }
 
     await product.deleteOne();
