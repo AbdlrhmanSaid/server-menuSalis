@@ -113,7 +113,7 @@ export const setupAdmin = async (req, res) => {
     const newSupervisor = await User.create({
       username,
       password: hashedPassword,
-      role: "Supervisor",
+      role: "supervisor",
     });
 
     res.status(201).json({
