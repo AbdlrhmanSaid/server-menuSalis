@@ -37,7 +37,7 @@ export const login = async (req, res) => {
     const token = jwt.sign(
       { id: user._id, role: user.role },
       process.env.JWT_SECRET,
-      { expiresIn: "7d" }
+      { expiresIn: "7d" },
     );
 
     // ✅ الرد على العميل بالتوكن والبيانات
@@ -89,12 +89,15 @@ export const setupAdmin = async (req, res) => {
   }
 
   try {
-    // التحقق من وجود مستخدم مسؤول (admin) مسبقاً في النظام
-    const existingAdmin = await User.findOne({ role: "admin" });
-    if (existingAdmin) {
+    // التحقق من وجود مستخدم مسؤول (supervisor) مسبقاً في النظام
+    const existingSupervisor = await User.findOne({ role: "supervisor" });
+    if (existingSupervisor) {
       return res
         .status(400)
-        .json({ message: "لقد تم إنشاء مستخدم مسؤول بالفعل في هذا النظام. لا يمكن استخدام هذا المسار مجدداً." });
+        .json({
+          message:
+            "لقد تم إنشاء مستخدم مسؤول بالفعل في هذا النظام. لا يمكن استخدام هذا المسار مجدداً.",
+        });
     }
 
     // التحقق من أن اسم المستخدم غير محجوز
@@ -106,19 +109,19 @@ export const setupAdmin = async (req, res) => {
     // تشفير كلمة المرور
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // إنشاء المستخدم بصلاحيات admin كاملة
-    const newAdmin = await User.create({
+    // إنشاء المستخدم بصلاحيات Supervisor كاملة
+    const newSupervisor = await User.create({
       username,
       password: hashedPassword,
-      role: "admin",
+      role: "Supervisor",
     });
 
     res.status(201).json({
       message: "تم إنشاء المستخدم المسؤول الأول بنجاح",
       user: {
-        id: newAdmin._id,
-        username: newAdmin.username,
-        role: newAdmin.role,
+        id: newSupervisor._id,
+        username: newSupervisor.username,
+        role: newSupervisor.role,
       },
     });
   } catch (error) {
@@ -128,4 +131,3 @@ export const setupAdmin = async (req, res) => {
     });
   }
 };
-
