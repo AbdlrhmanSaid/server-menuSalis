@@ -14,7 +14,7 @@ export const getMenus = async (req, res) => {
   try {
     const { companyId } = req.query;
     const filter = companyId ? { company: companyId } : {};
-    const menus = await Menu.find(filter).populate("company", "name").populate({
+    const menus = await Menu.find(filter).populate("company", "name slug _id").populate({
       path: "products",
       select: "name availableBranches price",
     });

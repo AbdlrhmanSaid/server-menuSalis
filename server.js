@@ -7,7 +7,12 @@ import helmet from "helmet";
 import http from "http";
 import { Server } from "socket.io";
 import cron from "node-cron";
+import path from "path";
+import { fileURLToPath } from "url";
 import connectDB from "./config/db.js";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 import userRoutes from "./routes/userRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
@@ -51,11 +56,17 @@ app.options(/.*/, cors());
 
 app.use(express.json());
 app.use(morgan("dev"));
-app.use(helmet());
+app.use(
+  helmet({
+    contentSecurityPolicy: false,
+  })
+);
+
+app.use(express.static(path.join(__dirname, "public")));
 
 // Routes
 app.get("/", (req, res) => {
-  res.send("Welcome to the MenuSalis API");
+  res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
 app.get("/health", async (req, res) => {

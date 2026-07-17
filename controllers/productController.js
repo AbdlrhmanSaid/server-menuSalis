@@ -38,7 +38,14 @@ export const getProducts = async (req, res) => {
     const { menuId } = req.query;
     const filter = menuId ? { menu: menuId } : {};
     const products = await Product.find(filter)
-      .populate("menu", "name")
+      .populate({
+        path: "menu",
+        select: "name company",
+        populate: {
+          path: "company",
+          select: "name slug"
+        }
+      })
       .populate("availableBranches", "name"); // ✅
 
     res.status(200).json(products);
@@ -56,7 +63,14 @@ export const getProducts = async (req, res) => {
 export const getProductById = async (req, res) => {
   try {
     const product = await Product.findById(req.params.id)
-      .populate("menu", "name")
+      .populate({
+        path: "menu",
+        select: "name company",
+        populate: {
+          path: "company",
+          select: "name slug"
+        }
+      })
       .populate("availableBranches", "name");
 
     if (!product) return res.status(404).json({ message: "المنتج غير موجود" });
@@ -133,8 +147,19 @@ export const createProduct = async (req, res) => {
     menu.products.push(newProduct._id);
     await menu.save();
 
+    const populatedProduct = await Product.findById(newProduct._id)
+      .populate({
+        path: "menu",
+        select: "name company",
+        populate: {
+          path: "company",
+          select: "name slug"
+        }
+      })
+      .populate("availableBranches", "name");
+
     // 7️⃣ ابعت socket update
-    io?.emit("product_created", newProduct);
+    io?.emit("product_created", populatedProduct);
 
     // 8️⃣ Add to history if user info is provided
     if (userId && userName) {
@@ -159,7 +184,7 @@ export const createProduct = async (req, res) => {
 
     res.status(201).json({
       message: "تم إنشاء المنتج وربطه بالفروع المختارة",
-      product: newProduct,
+      product: populatedProduct,
     });
   } catch (error) {
     res
@@ -334,7 +359,14 @@ export const updateProduct = async (req, res) => {
     }
 
     const updatedProduct = await Product.findById(product._id)
-      .populate("menu", "name company")
+      .populate({
+        path: "menu",
+        select: "name company",
+        populate: {
+          path: "company",
+          select: "name slug"
+        }
+      })
       .populate("availableBranches", "name");
 
     io?.emit("product_updated", updatedProduct);
