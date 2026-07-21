@@ -1,6 +1,5 @@
 // helpers/uploadImage.js
 import imagekit from "../config/imagekit.js";
-import { toFile } from "@imagekit/nodejs";
 
 /**
  * Upload a buffer to ImageKit
@@ -11,7 +10,7 @@ import { toFile } from "@imagekit/nodejs";
  */
 export async function uploadImage(fileBuffer, folder, fileName) {
   const result = await imagekit.files.upload({
-    file: await toFile(fileBuffer, fileName || `${folder}_${Date.now()}`),
+    file: fileBuffer.toString("base64"),
     fileName: fileName || `${folder}_${Date.now()}`,
     folder: `/${folder}`,
   });

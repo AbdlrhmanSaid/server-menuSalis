@@ -79,14 +79,30 @@ const uploadMiddleware = (fieldOrFields, maxCount = null) => {
       }
 
       if (req.files) {
-        console.log(
-          `✅ ${req.files.length} files uploaded:`,
-          req.files.map((f) => ({
-            originalname: f.originalname,
-            mimetype: f.mimetype,
-            size: f.size,
-          })),
-        );
+        if (Array.isArray(req.files)) {
+          console.log(
+            `✅ ${req.files.length} files uploaded:`,
+            req.files.map((f) => ({
+              originalname: f.originalname,
+              mimetype: f.mimetype,
+              size: f.size,
+            })),
+          );
+        } else {
+          // Object from upload.fields
+          const filesInfo = [];
+          for (const key in req.files) {
+            req.files[key].forEach((f) => {
+              filesInfo.push({
+                fieldname: f.fieldname,
+                originalname: f.originalname,
+                mimetype: f.mimetype,
+                size: f.size,
+              });
+            });
+          }
+          console.log(`✅ ${filesInfo.length} files uploaded:`, filesInfo);
+        }
       }
 
       next();
