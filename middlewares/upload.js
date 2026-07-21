@@ -30,14 +30,19 @@ const upload = multer({
 
 /**
  * uploadMiddleware
- * @param {string} fieldName - اسم الحقل في form-data
- * @param {number|null} maxCount - لو null → single, لو رقم → array
+ * @param {string|Array} fieldOrFields - اسم الحقل كـ string أو مصفوفة من الحقول (مثل: [{ name: 'logo', maxCount: 1 }])
+ * @param {number|null} maxCount - لو null → single, لو رقم → array (في حالة تمرير string)
  */
-const uploadMiddleware = (fieldName, maxCount = null) => {
+const uploadMiddleware = (fieldOrFields, maxCount = null) => {
   return (req, res, next) => {
-    const handler = maxCount
-      ? upload.array(fieldName, maxCount) // لعدة صور
-      : upload.single(fieldName); // لصورة واحدة
+    let handler;
+    if (Array.isArray(fieldOrFields)) {
+      handler = upload.fields(fieldOrFields);
+    } else {
+      handler = maxCount
+        ? upload.array(fieldOrFields, maxCount) // لعدة صور
+        : upload.single(fieldOrFields); // لصورة واحدة
+    }
 
     handler(req, res, (err) => {
       if (err) {

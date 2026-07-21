@@ -49,14 +49,26 @@ export const getCompanyById = async (req, res) => {
  */
 export const createCompany = async (req, res) => {
   try {
-    const { name, slug, description } = req.body;
+    const { name, slug, description, primaryColor, secondaryColor } = req.body;
 
     let logo = null;
-    if (req.file) {
+    let cover = null;
+
+    if (req.files && req.files.logo && req.files.logo[0]) {
       console.log("📤 Uploading logo to ImageKit...");
-      const uploaded = await uploadImage(req.file.buffer, "companies", req.file.originalname);
+      const uploaded = await uploadImage(req.files.logo[0].buffer, "companies", req.files.logo[0].originalname);
       console.log("✅ ImageKit upload success:", uploaded.url);
       logo = {
+        public_id: uploaded.fileId,
+        url: uploaded.url,
+      };
+    }
+
+    if (req.files && req.files.cover && req.files.cover[0]) {
+      console.log("📤 Uploading cover to ImageKit...");
+      const uploaded = await uploadImage(req.files.cover[0].buffer, "companies_covers", req.files.cover[0].originalname);
+      console.log("✅ ImageKit upload success:", uploaded.url);
+      cover = {
         public_id: uploaded.fileId,
         url: uploaded.url,
       };
@@ -67,6 +79,9 @@ export const createCompany = async (req, res) => {
       slug,
       description,
       logo,
+      cover,
+      primaryColor,
+      secondaryColor,
     });
 
     // 🔔 بث التغيير عبر WebSocket
@@ -98,13 +113,30 @@ export const updateCompany = async (req, res) => {
     company.name = req.body.name || company.name;
     company.slug = req.body.slug || company.slug;
     company.description = req.body.description || company.description;
+    if (req.body.primaryColor !== undefined) company.primaryColor = req.body.primaryColor;
+    if (req.body.secondaryColor !== undefined) company.secondaryColor = req.body.secondaryColor;
 
-    if (req.file) {
+    if (req.files && req.files.logo && req.files.logo[0]) {
       // Delete old image if exists
-      await deleteImage(company.logo?.public_id);
+      if (company.logo?.public_id) {
+        await deleteImage(company.logo.public_id);
+      }
 
-      const uploaded = await uploadImage(req.file.buffer, "companies", req.file.originalname);
+      const uploaded = await uploadImage(req.files.logo[0].buffer, "companies", req.files.logo[0].originalname);
       company.logo = {
+        public_id: uploaded.fileId,
+        url: uploaded.url,
+      };
+    }
+
+    if (req.files && req.files.cover && req.files.cover[0]) {
+      // Delete old cover if exists
+      if (company.cover?.public_id) {
+        await deleteImage(company.cover.public_id);
+      }
+
+      const uploaded = await uploadImage(req.files.cover[0].buffer, "companies_covers", req.files.cover[0].originalname);
+      company.cover = {
         public_id: uploaded.fileId,
         url: uploaded.url,
       };
@@ -136,7 +168,12 @@ export const deleteCompany = async (req, res) => {
     }
 
     // Delete image from ImageKit
-    await deleteImage(company.logo?.public_id);
+    if (company.logo?.public_id) {
+      await deleteImage(company.logo.public_id);
+    }
+    if (company.cover?.public_id) {
+      await deleteImage(company.cover.public_id);
+    }
 
     await company.deleteOne();
 

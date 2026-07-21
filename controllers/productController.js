@@ -6,6 +6,7 @@ import Company from "../models/Company.js";
 import Branch from "../models/Branch.js";
 import History from "../models/History.js";
 import mongoose from "mongoose";
+import { applyPromotionsToProducts } from "../helpers/promotionHelper.js";
 
 // Socket instance (هنمرره من السيرفر)
 let io;
@@ -48,7 +49,9 @@ export const getProducts = async (req, res) => {
       })
       .populate("availableBranches", "name"); // ✅
 
-    res.status(200).json(products);
+    const productsWithPromotions = await applyPromotionsToProducts(products);
+
+    res.status(200).json(productsWithPromotions);
   } catch (error) {
     res
       .status(500)
@@ -75,7 +78,9 @@ export const getProductById = async (req, res) => {
 
     if (!product) return res.status(404).json({ message: "المنتج غير موجود" });
 
-    res.status(200).json(product);
+    const productWithPromotion = await applyPromotionsToProducts(product);
+
+    res.status(200).json(productWithPromotion);
   } catch (error) {
     res
       .status(500)
@@ -159,7 +164,8 @@ export const createProduct = async (req, res) => {
       .populate("availableBranches", "name");
 
     // 7️⃣ ابعت socket update
-    io?.emit("product_created", populatedProduct);
+    const productWithPromotion = await applyPromotionsToProducts(populatedProduct);
+    io?.emit("product_created", productWithPromotion);
 
     // 8️⃣ Add to history if user info is provided
     if (userId && userName) {
@@ -184,7 +190,7 @@ export const createProduct = async (req, res) => {
 
     res.status(201).json({
       message: "تم إنشاء المنتج وربطه بالفروع المختارة",
-      product: populatedProduct,
+      product: productWithPromotion,
     });
   } catch (error) {
     res
@@ -367,13 +373,13 @@ export const updateProduct = async (req, res) => {
           select: "name slug"
         }
       })
-      .populate("availableBranches", "name");
+    const productWithPromotion = await applyPromotionsToProducts(updatedProduct);
 
-    io?.emit("product_updated", updatedProduct);
+    io?.emit("product_updated", productWithPromotion);
 
     res
       .status(200)
-      .json({ message: "تم تعديل المنتج بنجاح", product: updatedProduct });
+      .json({ message: "تم تعديل المنتج بنجاح", product: productWithPromotion });
   } catch (error) {
     res
       .status(500)
@@ -513,9 +519,11 @@ export const updateProductBranches = async (req, res) => {
       "name"
     );
 
+    const productWithPromotion = await applyPromotionsToProducts(updatedProduct);
+
     res.status(200).json({
       message: "تم تحديث فروع المنتج بنجاح",
-      product: updatedProduct,
+      product: productWithPromotion,
     });
   } catch (error) {
     res.status(500).json({
@@ -580,13 +588,15 @@ export const toggleProductInBranch = async (req, res) => {
       "name"
     );
 
-    io?.emit("product_updated", updatedProduct);
+    const productWithPromotion = await applyPromotionsToProducts(updatedProduct);
+
+    io?.emit("product_updated", productWithPromotion);
 
     res.status(200).json({
       message: isAvailable
         ? "تم جعل المنتج غير متاح في هذا الفرع"
         : "تم جعل المنتج متاح في هذا الفرع",
-      product: updatedProduct,
+      product: productWithPromotion,
     });
   } catch (error) {
     res.status(500).json({

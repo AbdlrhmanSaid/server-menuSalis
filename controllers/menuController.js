@@ -1,6 +1,7 @@
 import Menu from "../models/Menu.js";
 import Company from "../models/Company.js";
 import Product from "../models/Product.js";
+import { applyPromotionsToProducts } from "../helpers/promotionHelper.js";
 
 // 🟢 WebSocket instance
 let io;
@@ -19,7 +20,14 @@ export const getMenus = async (req, res) => {
       select: "name availableBranches price",
     });
 
-    res.status(200).json(menus);
+    const menusObj = menus.map(menu => menu.toObject());
+    for (const menu of menusObj) {
+      if (menu.products && menu.products.length > 0) {
+        menu.products = await applyPromotionsToProducts(menu.products);
+      }
+    }
+
+    res.status(200).json(menusObj);
   } catch (error) {
     res
       .status(500)
@@ -39,7 +47,13 @@ export const getMenuById = async (req, res) => {
       });
 
     if (!menu) return res.status(404).json({ message: "المنيو غير موجود" });
-    res.status(200).json(menu);
+
+    const menuObj = menu.toObject();
+    if (menuObj.products && menuObj.products.length > 0) {
+      menuObj.products = await applyPromotionsToProducts(menuObj.products);
+    }
+
+    res.status(200).json(menuObj);
   } catch (error) {
     res
       .status(500)
@@ -65,7 +79,14 @@ export const getMenusByCompanySlug = async (req, res) => {
         select: "name availableBranches price",
       });
 
-    res.status(200).json(menus);
+    const menusObj = menus.map(menu => menu.toObject());
+    for (const menu of menusObj) {
+      if (menu.products && menu.products.length > 0) {
+        menu.products = await applyPromotionsToProducts(menu.products);
+      }
+    }
+
+    res.status(200).json(menusObj);
   } catch (error) {
     res.status(500).json({
       message: "فشل في جلب المنيو عن طريق الشركة",
@@ -88,9 +109,14 @@ export const createMenu = async (req, res) => {
     const menu = await Menu.create({ name, description, company, products });
 
     // 🔔 بث التغيير
-    io?.emit("menu_created", menu);
+    const menuObj = menu.toObject();
+    // Assuming newly created menu has no populated products yet, but just in case
+    if (menuObj.products && menuObj.products.length > 0 && typeof menuObj.products[0] === 'object') {
+       menuObj.products = await applyPromotionsToProducts(menuObj.products);
+    }
+    io?.emit("menu_created", menuObj);
 
-    res.status(201).json({ message: "تم إنشاء المنيو بنجاح", menu });
+    res.status(201).json({ message: "تم إنشاء المنيو بنجاح", menu: menuObj });
   } catch (error) {
     res
       .status(500)
@@ -112,9 +138,13 @@ export const updateMenu = async (req, res) => {
     if (!menu) return res.status(404).json({ message: "المنيو غير موجود" });
 
     // 🔔 بث التغيير
-    io?.emit("menu_updated", menu);
+    const menuObj = menu.toObject();
+    if (menuObj.products && menuObj.products.length > 0) {
+      menuObj.products = await applyPromotionsToProducts(menuObj.products);
+    }
+    io?.emit("menu_updated", menuObj);
 
-    res.status(200).json({ message: "تم تحديث المنيو", menu });
+    res.status(200).json({ message: "تم تحديث المنيو", menu: menuObj });
   } catch (error) {
     res
       .status(500)

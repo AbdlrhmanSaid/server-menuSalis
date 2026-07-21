@@ -18,7 +18,7 @@ router.post(
   "/",
   protect,
   authorize("admin", "supervisor"),
-  uploadMiddleware("logo"),
+  uploadMiddleware([{ name: "logo", maxCount: 1 }, { name: "cover", maxCount: 1 }]),
   createCompany
 );
 
@@ -26,7 +26,7 @@ router.put(
   "/:id",
   protect,
   authorize("admin", "supervisor"),
-  uploadMiddleware("logo"),
+  uploadMiddleware([{ name: "logo", maxCount: 1 }, { name: "cover", maxCount: 1 }]),
   updateCompany
 );
 

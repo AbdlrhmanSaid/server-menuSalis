@@ -24,6 +24,16 @@ const companySchema = new Schema(
       url: { type: String },
       public_id: { type: String },
     },
+    cover: {
+      url: { type: String },
+      public_id: { type: String },
+    },
+    primaryColor: {
+      type: String,
+    },
+    secondaryColor: {
+      type: String,
+    },
   },
   { timestamps: true }
 );

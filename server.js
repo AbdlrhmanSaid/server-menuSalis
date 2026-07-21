@@ -22,9 +22,15 @@ import productRoutes from "./routes/productRoutes.js";
 import menuRoutes from "./routes/menuRoutes.js";
 import dashboardRoutes from "./routes/dashboardRoutes.js";
 import historyRoutes from "./routes/historyRoutes.js";
+import promotionRoutes from "./routes/promotionRoutes.js";
 
 // 🟢 WebSocket setter من الكنترولر
-import { setSocketIO } from "./controllers/productController.js";
+import { setSocketIO as setProductSocketIO } from "./controllers/productController.js";
+import { setSocketIO as setMenuSocketIO } from "./controllers/menuController.js";
+import { setSocketIO as setCompanySocketIO } from "./controllers/companyController.js";
+import { setSocketIO as setPromotionSocketIO } from "./controllers/promotionController.js";
+
+import { initPromotionScheduler } from "./cron/promotionScheduler.js";
 
 // 📊 Import History model for cleanup
 import History from "./models/History.js";
@@ -99,6 +105,7 @@ app.use("/api/branches", branchRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/menus", menuRoutes);
 app.use("/api/history", historyRoutes);
+app.use("/api/promotions", promotionRoutes);
 
 // WebSocket
 const io = new Server(server, {
@@ -109,7 +116,12 @@ const io = new Server(server, {
   },
 });
 
-setSocketIO(io);
+setProductSocketIO(io);
+setMenuSocketIO(io);
+setCompanySocketIO(io);
+setPromotionSocketIO(io);
+
+initPromotionScheduler(io);
 
 io.on("connection", (socket) => {
   console.log("🟢 Client connected:", socket.id);
