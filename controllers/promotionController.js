@@ -1,6 +1,9 @@
 import Promotion from "../models/Promotion.js";
 import History from "../models/History.js";
 import { uploadImage, deleteImage } from "../helpers/uploadImage.js";
+import Company from "../models/Company.js";
+import Menu from "../models/Menu.js";
+import Product from "../models/Product.js";
 
 let io;
 export const setSocketIO = (ioInstance) => {
@@ -37,6 +40,40 @@ export const getActivePromotions = async (req, res) => {
     res.status(200).json(promotions);
   } catch (error) {
     res.status(500).json({ message: "فشل في جلب العروض النشطة", error: error.message });
+  }
+};
+
+export const getActivePromotionsByCompany = async (req, res) => {
+  try {
+    const { companySlug } = req.params;
+    const now = new Date();
+
+    const company = await Company.findOne({ slug: companySlug });
+    if (!company) {
+      return res.status(404).json({ message: "الشركة غير موجودة" });
+    }
+
+    const menus = await Menu.find({ company: company._id });
+    const products = await Product.find({ menu: { $in: menus.map(m => m._id) } });
+
+    const targetIds = [
+      company._id,
+      ...menus.map(m => m._id),
+      ...products.map(p => p._id)
+    ];
+
+    const promotions = await Promotion.find({
+      isActive: true,
+      startDate: { $lte: now },
+      endDate: { $gt: now },
+      target: { $in: targetIds }
+    })
+      .sort({ priority: -1 })
+      .populate("target", "name slug");
+
+    res.status(200).json(promotions);
+  } catch (error) {
+    res.status(500).json({ message: "فشل في جلب عروض الشركة", error: error.message });
   }
 };
 

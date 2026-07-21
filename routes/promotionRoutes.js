@@ -7,6 +7,7 @@ import {
   updatePromotion,
   deletePromotion,
   togglePromotionStatus,
+  getActivePromotionsByCompany,
 } from "../controllers/promotionController.js";
 import { protect, authorize } from "../middlewares/authMiddleware.js";
 import uploadMiddleware from "../middlewares/upload.js";
@@ -15,6 +16,7 @@ const router = express.Router();
 
 router.get("/", getPromotions);
 router.get("/active", getActivePromotions);
+router.get("/company/:companySlug/active", getActivePromotionsByCompany);
 router.get("/:id", getPromotionById);
 
 router.post(

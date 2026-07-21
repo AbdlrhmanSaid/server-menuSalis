@@ -23,7 +23,15 @@ export const getMenus = async (req, res) => {
     const menusObj = menus.map(menu => menu.toObject());
     for (const menu of menusObj) {
       if (menu.products && menu.products.length > 0) {
-        menu.products = await applyPromotionsToProducts(menu.products);
+        // Inject menu reference so promotionHelper can use it
+        const productsWithMenu = menu.products.map(p => ({
+          ...p,
+          menu: {
+            _id: menu._id,
+            company: menu.company
+          }
+        }));
+        menu.products = await applyPromotionsToProducts(productsWithMenu);
       }
     }
 
@@ -50,7 +58,14 @@ export const getMenuById = async (req, res) => {
 
     const menuObj = menu.toObject();
     if (menuObj.products && menuObj.products.length > 0) {
-      menuObj.products = await applyPromotionsToProducts(menuObj.products);
+      const productsWithMenu = menuObj.products.map(p => ({
+        ...p,
+        menu: {
+          _id: menuObj._id,
+          company: menuObj.company
+        }
+      }));
+      menuObj.products = await applyPromotionsToProducts(productsWithMenu);
     }
 
     res.status(200).json(menuObj);
@@ -82,7 +97,14 @@ export const getMenusByCompanySlug = async (req, res) => {
     const menusObj = menus.map(menu => menu.toObject());
     for (const menu of menusObj) {
       if (menu.products && menu.products.length > 0) {
-        menu.products = await applyPromotionsToProducts(menu.products);
+        const productsWithMenu = menu.products.map(p => ({
+          ...p,
+          menu: {
+            _id: menu._id,
+            company: menu.company
+          }
+        }));
+        menu.products = await applyPromotionsToProducts(productsWithMenu);
       }
     }
 
@@ -112,7 +134,11 @@ export const createMenu = async (req, res) => {
     const menuObj = menu.toObject();
     // Assuming newly created menu has no populated products yet, but just in case
     if (menuObj.products && menuObj.products.length > 0 && typeof menuObj.products[0] === 'object') {
-       menuObj.products = await applyPromotionsToProducts(menuObj.products);
+       const productsWithMenu = menuObj.products.map(p => ({
+         ...p,
+         menu: { _id: menuObj._id, company: menuObj.company }
+       }));
+       menuObj.products = await applyPromotionsToProducts(productsWithMenu);
     }
     io?.emit("menu_created", menuObj);
 
@@ -140,7 +166,11 @@ export const updateMenu = async (req, res) => {
     // 🔔 بث التغيير
     const menuObj = menu.toObject();
     if (menuObj.products && menuObj.products.length > 0) {
-      menuObj.products = await applyPromotionsToProducts(menuObj.products);
+      const productsWithMenu = menuObj.products.map(p => ({
+        ...p,
+        menu: { _id: menuObj._id, company: menuObj.company }
+      }));
+      menuObj.products = await applyPromotionsToProducts(productsWithMenu);
     }
     io?.emit("menu_updated", menuObj);
 
